@@ -1,2 +1,2 @@
-web: APP_PORT=3000 heroku-applink-service-mesh-latest-amd64 pnpm start
+web: APP_PORT=3000 heroku-applink-service-mesh pnpm start
 worker: pnpm worker

@@ -1,27 +1,27 @@
-Heroku AppLink - Scaling Batch Jobs with Heroku - Node.js
-=========================================================
+# Heroku AppLink - Scaling Batch Jobs with Heroku - Node.js
 
 This sample seamlessly delegates the processing of large amounts of data with significant compute requirements to Heroku Worker processes. It also demonstrates the use of the Unit of Work aspect of the SDK for easier utilization of the Salesforce Composite APIs.
 
-# Architecture Overview
+## Architecture Overview
 
 The scenario used in this sample illustrates a basis for processing large volumes of Salesforce data using elastically scalable Heroku worker processes that execute complex compute calculations. In this case **Opportunity** data is read and calculated pricing data is stored in an associated **Quote**. Calculating quote information from opportunities can become quite intensive, especially when large multinational businesses have complex rules that impact pricing related to region, products, and discount thresholds. It's also possible that such code already exists, and there is a desire to reuse it within a Salesforce context. 
 
 <img src="images/arch.jpg" width="80%">
 
-This sample includes two process types `web` and `worker`, both can be scaled vertically and horizontally to speed up processing. The `web` process will receive API calls from Salesforce and `worker` will execute the jobs asynchronously. A [Heroku Key Value Store](https://elements.heroku.com/addons/heroku-redis) (Heroku Redis) is used to create means to communicate between the two processes.
+This sample includes two process types `web` and `worker`, both can be scaled vertically and horizontally to speed up processing. The `web` process will receive API calls from Salesforce and `worker` will execute the jobs asynchronously. A [Heroku Key Value Store](https://elements.heroku.com/addons/heroku-key-value-store) is used to create means to communicate between the two processes.
 
 > [!NOTE]
 > This sample could be considered an alternative to using Batch Apex if your data volumes and/or compute complexity requires it. In addition Heroku worker processes scale elastically and can thus avoid queue wait times impacting processing time that can occur with Batch Apex. For further information see **Technical Information** below.
 
-# Requirements
+## Requirements
+
 - Heroku login
 - Heroku CLI installed
 - Heroku AppLink plugin installed
 - Salesforce CLI installed
 - Login information for one or more Scratch, Development or Sandbox orgs
 
-# Local Development and Testing
+## Local Development and Testing
 
 As with other samples (see below) this section focuses on how to develop and test locally before deploying to Heroku and testing from within a Salesforce org. Using the `heroku local` command (part of the Heroku CLI) we can easily launch locally both the `web` and `worker` processes defined in the `Procfile` from one command. Run the following commands to run the sample locally against a remotely provisioned [Heroku Key Value Store](https://devcenter.heroku.com/articles/heroku-redis).
 
@@ -45,7 +45,7 @@ pnpm install
 heroku local -f Procfile.local web=1,worker=1
 ```
 
-### Generating test data
+## Generating test data
 
 Open a new terminal window and enter the following command to start a job that generates sample data:
 
@@ -94,7 +94,7 @@ Finally navigate to the **Opportunities** tab in your Salesforce org and you sho
 
 <img src="images/opps.jpg" width="60%">
 
-### Running the generate quotes job locally
+## Running the generate quotes job locally
 
 Run the following command to execute a batch job to generate **Quote** records from the **Opportunity** records created above.
 
@@ -119,7 +119,7 @@ Navigate to the **Quotes** tab in your org to review the generates records:
 
 Next we will deploy the application and pushing it into a Salesforce org to allow jobs to be started from Apex, Flow or Agentforce.
 
-# Deploying and Testing
+## Deploying and Testing
 
 > [!IMPORTANT]
 > Check you are not still running the application locally. If you want to start over at any time use `heroku destroy` to delete your app.
@@ -139,7 +139,7 @@ heroku addons:create heroku-redis:mini --wait
 
 Next config the Heroku AppLink add-on and publish the application into your Salesforce org as follows:
 
-```
+``` sh
 heroku addons:create heroku-applink --wait
 heroku buildpacks:add --index=1 heroku/heroku-applink-service-mesh
 heroku buildpacks:add heroku/java
@@ -150,14 +150,14 @@ heroku salesforce:publish api-docs.yaml --client-name GenerateQuoteJob --connect
 
 Finally deploy the application and scale both the `web` and `worker` processes to run on a single dyno each. If your worker does not start, login to the Heroku dashboard and check the worker is enabled.
 
-```
+``` sh
 git push heroku main
 heroku ps:scale web=1,worker=1
 ```
 
 Now grant permissions to users to invoke your code using the following `sf` commands:
 
-```
+``` sh
 sf org assign permset --name GenerateQuoteJob -o my-org
 sf org assign permset --name GenerateQuoteJobPermissions -o my-org
 ```
@@ -168,7 +168,7 @@ Once published you can see the `executeBatch` operation that takes a [SOQL WHERE
 
 As noted in the [Extending Apex, Flow and Agentforce](https://github.com/heroku-examples/heroku-applink-pattern-org-action-java?tab=readme-ov-file#heroku-integration---extending-apex-flow-and-agentforce---java) sample you can now invoke these operations from Apex, Flow or Agentforce. Here is some basic Apex code to start the job to create the sample data (if you have not done so earlier):
 
-```
+``` sh
 echo \
 "HerokuAppLink.GenerateQuoteJob service = new HerokuAppLink.GenerateQuoteJob();" \
 "System.debug('Quote Id: ' + service.datacreate().Code202.jobId);" \
@@ -180,7 +180,7 @@ echo \
 
 Here is some basic Apex code you can run from the command line to start the generate Quotes job:
 
-```
+``` sh
 echo \
 "HerokuAppLink.GenerateQuoteJob service = new HerokuAppLink.GenerateQuoteJob();" \
 "HerokuAppLink.GenerateQuoteJob.executeBatch_Request request = new HerokuAppLink.GenerateQuoteJob.executeBatch_Request();" \
@@ -196,7 +196,7 @@ echo \
 
 Navigate to the **Quotes** tab in your org or one of the sample **Oppoortunties** to review the generates quotes. You can re-run this operation as many times as you like it will simply keep adding **Quotes** to the sample Opporunties created.
 
-# Removing Sample Data
+## Removing Sample Data
 
 If you are running application locally, run the following command to execute a batch process to delete the sample **Opportunity** and **Quote** records.
 
@@ -207,7 +207,7 @@ If you are running application locally, run the following command to execute a b
 
 If you have deployed the application, run the following:
 
-```
+``` sh
 echo \
 "HerokuAppLink.GenerateQuoteJob service = new HerokuAppLink.GenerateQuoteJob();" \
 "System.debug('Quote Id: ' + service.datadelete().Code202.jobId);" \
@@ -231,8 +231,9 @@ worker.1 | Bulk API v2 Job 750am00000Q3uV1AAJ processing complete.
 55610381-55f8-4a05-8550-158f6410663b
 ```
 
-# Technical Information
-- The [Heroku Redis](https://elements.heroku.com/addons/heroku-redis) add-on is used to manage job queuing via a single Redis Stream named `jobsChannel`. While there are logically two types of jobs (quote generation and sample data management), both are sent to this same stream. The worker process reads from this stream and dispatches jobs to the appropriate service based on the job type included in the message payload. The `mini` tier of this [add-on](https://devcenter.heroku.com/articles/heroku-redis) is suitable for this sample. Redis connection details are managed via environment variables (typically set in `.env` locally or via Heroku Config Vars).
+## Technical Information
+
+- The [Heroku Key Value Store](https://elements.heroku.com/addons/heroku-key-value-store) add-on is used to manage job queuing via a single Redis Stream named `jobsChannel`. While there are logically two types of jobs (quote generation and sample data management), both are sent to this same stream. The worker process reads from this stream and dispatches jobs to the appropriate service based on the job type included in the message payload. The `mini` tier of this [add-on](https://devcenter.heroku.com/articles/heroku-redis) is suitable for this sample. Redis connection details are managed via environment variables (typically set in `.env` locally or via Heroku Config Vars).
 - Node.js and the `Procfile` define the `web` and `worker` process types. The `web` process runs the Fastify server (`server/index.js`) handling API requests and publishing jobs to the Redis stream, while the `worker` process (`server/worker.js`) listens to the stream and executes jobs using the appropriate service (`server/services/quote.js` or `server/services/data.js`).
 - The quote generation logic in `server/services/quote.js` uses the AppLink SDK's Data API and Unit of Work pattern (`org.dataApi.newUnitOfWork`, `commitUnitOfWork`) to insert **Quote** and **QuoteLineItem** records together within a single transaction, ensuring atomicity.
 - The `invoke.sh` script relies on the `x-client-context` header being correctly passed for authentication when running locally. The main `Procfile` is used for deployment, which incorporates the Heroku AppLink service mesh.
@@ -242,12 +243,10 @@ worker.1 | Bulk API v2 Job 750am00000Q3uV1AAJ processing complete.
 - To create sample data (`handleDataMessage` in `server/services/data.js`), the AppLink SDK's Bulk API v2 (`org.bulkApi`) is used for efficient handling of potentially large volumes.
 - **An informal execution time comparison.** The pricing calculation logic is intentionally simple for the purposes of ensuring the technical aspects of using the Heroku AppLink in this context are made clear. As the compute requirements fit within Apex limits, it was possible to create an Apex version of the job logic (originally included in the Java version's `/src-org` folder). While not a formal benchmark, execution time over 5000 opportunities took ~24 seconds using the Heroku job approach vs ~150 seconds to run with Batch Apex, **an improvement of 144% in execution time**. During testing (of the Java version) it was observed that this was largely due in this case to the longer dequeue times with Batch Apex vs being near instant with a Heroku worker.
 
-Other Samples
--------------
+## Other Samples
 
-| Sample | What it covers? |
-| ------ | --------------- |
-| [Salesforce API Access](https://github.com/heroku-examples/heroku-applink-pattern-api-access-nodejs) | This sample application showcases how to extend a Heroku web application by integrating it with Salesforce APIs, enabling seamless data exchange and automation across multiple connected Salesforce orgs. It also includes a demonstration of the Salesforce Bulk API, which is optimized for handling large data volumes efficiently. |
-| [Extending Apex, Flow and Agentforce](https://github.com/heroku-examples/heroku-applink-pattern-org-action-nodejs) | This sample demonstrates publishing a Heroku application into an org to enable Apex, Flow, and Agentforce to call out to Heroku. For Apex, both synchronous and asynchronous invocation are demonstrated, along with securely elevating Salesforce permissions for processing that requires additional object or field access. |
-| [Scaling Batch Jobs with Heroku](https://github.com/heroku-examples/heroku-applink-pattern-org-job-nodejs) | This sample seamlessly delegates the processing of large amounts of data with significant compute requirements to Heroku Worker processes. It also demonstrates the use of the Unit of Work aspect of the SDK (JavaScript only for the pilot) for easier utilization of the Salesforce Composite APIs. |
-| [Using Eventing to drive Automation and Communication](https://github.com/heroku-examples/heroku-applink-pattern-eventing-nodejs) | This sample extends the batch job sample by adding the ability to use eventing to start the work and notify users once it completes using Custom Notifications. These notifications are sent to the user's desktop or mobile device running Salesforce Mobile. Flow is used in this sample to demonstrate how processing can be handed off to low-code tools such as Flow. |
+| Sample                                                                                                                             | What it covers?                                                                                                                                                                                                                                                                                                                         |
+| ---------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Salesforce API Access - Node.js](https://github.com/heroku-reference-apps/heroku-applink-pattern-api-access-nodejs)               | This sample application showcases how to extend a Heroku web application by integrating it with Salesforce APIs, enabling seamless data exchange and automation across multiple connected Salesforce orgs. It also includes a demonstration of the Salesforce Bulk API, which is optimized for handling large data volumes efficiently. |
+| [Extending Apex, Flow and Agentforce - Node.js](https://github.com/heroku-reference-apps/heroku-applink-pattern-org-action-nodejs) | This sample demonstrates importing a Heroku application into an org to enable Apex, Flow, and Agentforce to call out to Heroku. For Apex, both synchronous and asynchronous invocation are demonstrated, along with securely elevating Salesforce permissions for processing that requires additional object or field access.           |
+| [Scaling Batch Jobs with Heroku - Node.js](https://github.com/heroku-reference-apps/heroku-applink-pattern-org-job-nodejs)         | This sample seamlessly delegates the processing of large amounts of data with significant compute requirements to Heroku Worker processes.                                                                                                                                                                                              |
