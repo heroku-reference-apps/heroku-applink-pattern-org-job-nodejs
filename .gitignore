@@ -110,6 +110,9 @@ dist
 !.vscode/extensions.json
 *.sublime-workspace
 
+# SFDX
+.sfdx/
+
 # System files
 .DS_Store
 Thumbs.db 
